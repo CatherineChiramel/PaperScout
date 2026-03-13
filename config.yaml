@@ -1,0 +1,25 @@
+# PaperScout Configuration
+
+# Research topics to search for
+topics:
+  - "large language model agents"
+  - "retrieval augmented generation"
+
+# Search settings
+search:
+  max_results_per_query: 20
+  sources:
+    - arxiv
+    - semantic_scholar
+
+# Relevance scoring
+relevance:
+  min_score: 7  # papers scoring below this are skipped
+
+# Email settings
+email:
+  recipient: ""  # set your email here
+  subject_prefix: "[PaperScout]"
+
+# Gemini model
+model: "gemini-2.0-flash"

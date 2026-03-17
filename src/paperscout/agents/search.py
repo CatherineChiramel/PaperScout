@@ -1,7 +1,7 @@
 from paperscout.state.graph_state import PaperScoutState, Paper
 from paperscout.tools.arxiv import search_arxiv
 from paperscout.tools.semantic_scholar import search_semantic_scholar
-from paperscout.state.database import add_paper, add_search
+from paperscout.state.database import add_paper, add_search, paper_already_processed
 
 
 def search_node(state: PaperScoutState) -> dict:
@@ -20,7 +20,7 @@ def search_node(state: PaperScoutState) -> dict:
             arxiv_papers = search_arxiv(topic, max_results=max_results)
             add_search(topic, "arxiv", len(arxiv_papers))
             for p in arxiv_papers:
-                if p["id"] not in seen_ids:
+                if p["id"] not in seen_ids and not paper_already_processed(p["id"]):
                     seen_ids.add(p["id"])
                     paper: Paper = {**p, "relevance_score": None, "key_findings": None}
                     all_papers.append(paper)
@@ -41,7 +41,7 @@ def search_node(state: PaperScoutState) -> dict:
             s2_papers = search_semantic_scholar(topic, max_results=max_results)
             add_search(topic, "semantic_scholar", len(s2_papers))
             for p in s2_papers:
-                if p["id"] not in seen_ids:
+                if p["id"] not in seen_ids and not paper_already_processed(p["id"]):
                     seen_ids.add(p["id"])
                     paper: Paper = {**p, "relevance_score": None, "key_findings": None}
                     all_papers.append(paper)

@@ -139,6 +139,19 @@ def get_all_papers(db_path: Path = DB_PATH) -> list[dict]:
         conn.close()
 
 
+def paper_already_processed(paper_id: str, db_path: Path = DB_PATH) -> bool:
+    """Check if a paper has already been processed beyond 'discovered' status."""
+    conn = get_connection(db_path)
+    try:
+        row = conn.execute(
+            "SELECT status FROM papers WHERE id = ? AND status != 'discovered'",
+            (paper_id,),
+        ).fetchone()
+        return row is not None
+    finally:
+        conn.close()
+
+
 # --- Search history ---
 
 def add_search(query: str, source: str, result_count: int, db_path: Path = DB_PATH) -> None:

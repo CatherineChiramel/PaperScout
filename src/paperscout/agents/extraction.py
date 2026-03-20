@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -9,6 +10,9 @@ from paperscout.state.database import update_paper_findings
 from paperscout.tools.pdf import download_and_extract
 
 load_dotenv()
+
+API_DELAY_SECONDS = 5
+MAX_RETRIES = 3
 
 EXTRACTION_PROMPT = """You are a research paper analyst. Given the text of a research paper,
 extract the 3-5 most important key findings or contributions.
@@ -61,17 +65,26 @@ def extraction_node(state: PaperScoutState) -> dict:
             extracted.append(paper)
             continue
 
-        try:
-            prompt = EXTRACTION_PROMPT.format(title=paper["title"], text=text)
-            response = llm.invoke(prompt)
-            content = response.content.strip()
-            if content.startswith("```"):
-                content = content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-            findings = json.loads(content)
-        except Exception as e:
-            print(f"  LLM extraction failed: {e}")
-            findings = ["Extraction failed — see paper directly."]
+        findings = ["Extraction failed — see paper directly."]
+        for attempt in range(MAX_RETRIES):
+            try:
+                prompt = EXTRACTION_PROMPT.format(title=paper["title"], text=text)
+                response = llm.invoke(prompt)
+                content = response.content.strip()
+                if content.startswith("```"):
+                    content = content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+                findings = json.loads(content)
+                break
+            except Exception as e:
+                if "429" in str(e) and attempt < MAX_RETRIES - 1:
+                    wait = API_DELAY_SECONDS * (attempt + 2)
+                    print(f"  Rate limited, waiting {wait}s...")
+                    time.sleep(wait)
+                    continue
+                print(f"  LLM extraction failed: {e}")
+                break
 
+        time.sleep(API_DELAY_SECONDS)
         paper["key_findings"] = findings
         update_paper_findings(paper["id"], findings)
         print(f"  Extracted {len(findings)} findings")

@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -8,6 +9,10 @@ from paperscout.state.graph_state import PaperScoutState, Paper
 from paperscout.state.database import update_paper_score
 
 load_dotenv()
+
+# Delay between API calls to stay within free tier rate limits (15 req/min)
+API_DELAY_SECONDS = 5
+MAX_RETRIES = 3
 
 SCORING_PROMPT = """You are a research paper relevance scorer. Given a paper's title and abstract,
 score its relevance to the research topics on a scale of 1-10.
@@ -57,19 +62,29 @@ def relevance_node(state: PaperScoutState) -> dict:
             abstract=paper["abstract"],
         )
 
-        try:
-            response = llm.invoke(prompt)
-            text = response.content.strip()
-            # Handle markdown code blocks in response
-            if text.startswith("```"):
-                text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-            result = json.loads(text)
-            score = float(result["score"])
-            reason = result.get("reason", "")
-        except Exception as e:
-            print(f"  Scoring failed: {e}, defaulting to 5")
-            score = 5.0
-            reason = "Scoring failed"
+        score = 5.0
+        reason = "Scoring failed"
+        for attempt in range(MAX_RETRIES):
+            try:
+                response = llm.invoke(prompt)
+                text = response.content.strip()
+                # Handle markdown code blocks in response
+                if text.startswith("```"):
+                    text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+                result = json.loads(text)
+                score = float(result["score"])
+                reason = result.get("reason", "")
+                break
+            except Exception as e:
+                if "429" in str(e) and attempt < MAX_RETRIES - 1:
+                    wait = API_DELAY_SECONDS * (attempt + 2)
+                    print(f"  Rate limited, waiting {wait}s...")
+                    time.sleep(wait)
+                    continue
+                print(f"  Scoring failed: {e}, defaulting to 5")
+                break
+
+        time.sleep(API_DELAY_SECONDS)
 
         paper["relevance_score"] = score
         update_paper_score(paper["id"], score)

@@ -1,15 +1,10 @@
 import json
-import os
 import time
-
-from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 from paperscout.state.graph_state import PaperScoutState, Paper
 from paperscout.state.database import update_paper_findings
 from paperscout.tools.pdf import download_and_extract
-
-load_dotenv()
+from paperscout.llm import get_llm
 
 API_DELAY_SECONDS = 5
 MAX_RETRIES = 3
@@ -39,10 +34,7 @@ def extraction_node(state: PaperScoutState) -> dict:
         print("No relevant papers to extract.")
         return {"extracted_papers": []}
 
-    llm = ChatGoogleGenerativeAI(
-        model=state["model"],
-        google_api_key=os.environ["GOOGLE_API_KEY"],
-    )
+    llm = get_llm(state["llm_provider"], state["llm_model"])
 
     extracted: list[Paper] = []
 

@@ -21,5 +21,12 @@ email:
   recipient: ""  # set your email here
   subject_prefix: "[PaperScout]"
 
-# Gemini model
-model: "gemini-2.5-flash"
+# LLM settings — switch provider by changing these two lines
+# Supported providers: google, groq, xai
+llm:
+  provider: "google"
+  model: "gemini-2.5-flash"
+  # provider: "groq"
+  # model: "llama-3.3-70b-versatile"
+  # provider: "xai"
+  # model: "grok-3-mini"

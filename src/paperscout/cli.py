@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+import os
 
 import yaml
 from dotenv import load_dotenv
@@ -25,8 +26,9 @@ def run(config_path: Path = CONFIG_PATH):
         "topics": config["topics"],
         "max_results_per_query": config["search"]["max_results_per_query"],
         "min_relevance_score": config["relevance"]["min_score"],
-        "email_recipient": config["email"]["recipient"],
-        "model": config["model"],
+        "email_recipient": os.getenv('GMAIL_ADDRESS'),
+        "llm_provider": config["llm"]["provider"],
+        "llm_model": config["llm"]["model"],
         "discovered_papers": [],
         "relevant_papers": [],
         "extracted_papers": [],

@@ -1,14 +1,9 @@
 import json
-import os
 import time
-
-from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 from paperscout.state.graph_state import PaperScoutState, Paper
 from paperscout.state.database import update_paper_score
-
-load_dotenv()
+from paperscout.llm import get_llm
 
 # Delay between API calls to stay within free tier rate limits (15 req/min)
 API_DELAY_SECONDS = 5
@@ -46,10 +41,7 @@ def relevance_node(state: PaperScoutState) -> dict:
         print("No papers to score.")
         return {"relevant_papers": []}
 
-    llm = ChatGoogleGenerativeAI(
-        model=state["model"],
-        google_api_key=os.environ["GOOGLE_API_KEY"],
-    )
+    llm = get_llm(state["llm_provider"], state["llm_model"])
 
     relevant: list[Paper] = []
 

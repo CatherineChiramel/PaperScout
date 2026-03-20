@@ -47,7 +47,7 @@ def relevance_node(state: PaperScoutState) -> dict:
         return {"relevant_papers": []}
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model=state["model"],
         google_api_key=os.environ["GOOGLE_API_KEY"],
     )
 

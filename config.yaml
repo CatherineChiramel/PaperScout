@@ -2,12 +2,12 @@
 
 # Research topics to search for
 topics:
-  - "large language model agents"
-  - "retrieval augmented generation"
+  - "agentic AI"
+  - "large language models"
 
 # Search settings
 search:
-  max_results_per_query: 20
+  max_results_per_query: 5  # keep low for Gemini free tier (15 req/min limit)
   sources:
     - arxiv
     - semantic_scholar
@@ -18,8 +18,8 @@ relevance:
 
 # Email settings
 email:
-  recipient: ""  # set your email here
+  recipient: "chiramelcatherine@gmail.com"  # set your email here
   subject_prefix: "[PaperScout]"
 
 # Gemini model
-model: "gemini-2.0-flash"
+model: "gemini-2.5-flash"

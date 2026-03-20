@@ -19,6 +19,7 @@ class PaperScoutState(TypedDict):
     max_results_per_query: int
     min_relevance_score: float
     email_recipient: str
+    model: str
 
     # Populated by search node
     discovered_papers: list[Paper]

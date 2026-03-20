@@ -26,6 +26,7 @@ def run(config_path: Path = CONFIG_PATH):
         "max_results_per_query": config["search"]["max_results_per_query"],
         "min_relevance_score": config["relevance"]["min_score"],
         "email_recipient": config["email"]["recipient"],
+        "model": config["model"],
         "discovered_papers": [],
         "relevant_papers": [],
         "extracted_papers": [],

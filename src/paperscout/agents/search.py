@@ -36,26 +36,26 @@ def search_node(state: PaperScoutState) -> dict:
         except Exception as e:
             print(f"  arXiv search failed: {e}")
 
-        print(f"Searching Semantic Scholar for: {topic}")
-        try:
-            s2_papers = search_semantic_scholar(topic, max_results=max_results)
-            add_search(topic, "semantic_scholar", len(s2_papers))
-            for p in s2_papers:
-                if p["id"] not in seen_ids and not paper_already_processed(p["id"]):
-                    seen_ids.add(p["id"])
-                    paper: Paper = {**p, "relevance_score": None, "key_findings": None}
-                    all_papers.append(paper)
-                    add_paper(
-                        paper_id=p["id"],
-                        title=p["title"],
-                        authors=p["authors"],
-                        abstract=p["abstract"],
-                        source=p["source"],
-                        url=p["url"],
-                        pdf_url=p.get("pdf_url"),
-                    )
-        except Exception as e:
-            print(f"  Semantic Scholar search failed: {e}")
+        # print(f"Searching Semantic Scholar for: {topic}")
+        # try:
+        #     s2_papers = search_semantic_scholar(topic, max_results=max_results)
+        #     add_search(topic, "semantic_scholar", len(s2_papers))
+        #     for p in s2_papers:
+        #         if p["id"] not in seen_ids and not paper_already_processed(p["id"]):
+        #             seen_ids.add(p["id"])
+        #             paper: Paper = {**p, "relevance_score": None, "key_findings": None}
+        #             all_papers.append(paper)
+        #             add_paper(
+        #                 paper_id=p["id"],
+        #                 title=p["title"],
+        #                 authors=p["authors"],
+        #                 abstract=p["abstract"],
+        #                 source=p["source"],
+        #                 url=p["url"],
+        #                 pdf_url=p.get("pdf_url"),
+        #             )
+        # except Exception as e:
+        #     print(f"  Semantic Scholar search failed: {e}")
 
     print(f"\nTotal unique papers discovered: {len(all_papers)}")
     return {"discovered_papers": all_papers}

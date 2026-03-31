@@ -8,6 +8,7 @@ topics:
 # Search settings
 search:
   max_results_per_query: 5  # keep low for Gemini free tier (15 req/min limit)
+  since: "2025-01"          # only fetch papers from this month onward (format: YYYY-MM or YYYY-MM-DD)
   sources:
     - arxiv
     - semantic_scholar

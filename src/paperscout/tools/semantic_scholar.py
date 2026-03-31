@@ -9,16 +9,27 @@ FIELDS = "paperId,title,authors,abstract,url,openAccessPdf,externalIds"
 MAX_RETRIES = 3
 
 
-def search_semantic_scholar(query: str, max_results: int = 20) -> list[dict]:
+def search_semantic_scholar(query: str, max_results: int = 20, since: str | None = None) -> list[dict]:
     """Search Semantic Scholar for papers matching a query.
 
     Returns a list of paper dicts with id, title, authors, abstract, url, pdf_url.
+    If since is provided (e.g. '2025-01' or '2025-01-15'), only returns papers from that date onward.
     """
     params = {
         "query": query,
         "limit": min(max_results, 100),
         "fields": FIELDS,
     }
+
+    if since:
+        # Semantic Scholar accepts "YYYY-MM-DD:" to mean "from this date onward"
+        # Pad to full date if only YYYY-MM was given
+        parts = since.split("-")
+        if len(parts) == 2:
+            since_date = f"{since}-01"
+        else:
+            since_date = since
+        params["publicationDateOrYear"] = f"{since_date}:"
 
     # Semantic Scholar free tier has strict rate limits — retry with backoff
     for attempt in range(MAX_RETRIES):

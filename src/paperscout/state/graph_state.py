@@ -17,6 +17,7 @@ class PaperScoutState(TypedDict):
     # Input
     topics: list[str]
     max_results_per_query: int
+    search_since: str
     min_relevance_score: float
     email_recipient: str
     llm_provider: str

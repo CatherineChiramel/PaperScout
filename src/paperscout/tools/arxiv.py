@@ -7,13 +7,31 @@ ARXIV_API_URL = "https://export.arxiv.org/api/query"
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
 
 
-def search_arxiv(query: str, max_results: int = 20) -> list[dict]:
+def _build_date_filter(since: str | None) -> str:
+    """Convert a 'YYYY-MM' or 'YYYY-MM-DD' since string into an arXiv submittedDate range.
+
+    arXiv expects: submittedDate:[YYYYMMDDHHmm TO YYYYMMDDHHmm]
+    We use '*' for the end to mean 'up to now'.
+    """
+    if not since:
+        return ""
+    parts = since.split("-")
+    year = parts[0]
+    month = parts[1] if len(parts) >= 2 else "01"
+    day = parts[2] if len(parts) >= 3 else "01"
+    return f" AND submittedDate:[{year}{month}{day}0000 TO *]"
+
+
+def search_arxiv(query: str, max_results: int = 20, since: str | None = None) -> list[dict]:
     """Search arXiv for papers matching a query.
 
     Returns a list of paper dicts with id, title, authors, abstract, url, pdf_url.
+    If since is provided (e.g. '2025-01'), only returns papers submitted from that date onward.
     """
+    search_query = f"all:{query}{_build_date_filter(since)}"
+
     params = {
-        "search_query": f"all:{query}",
+        "search_query": search_query,
         "start": 0,
         "max_results": max_results,
         "sortBy": "submittedDate",

@@ -11,13 +11,14 @@ def search_node(state: PaperScoutState) -> dict:
     """
     topics = state["topics"]
     max_results = state["max_results_per_query"]
+    since = state.get("search_since")
     seen_ids: set[str] = set()
     all_papers: list[Paper] = []
 
     for topic in topics:
         print(f"Searching arXiv for: {topic}")
         try:
-            arxiv_papers = search_arxiv(topic, max_results=max_results)
+            arxiv_papers = search_arxiv(topic, max_results=max_results, since=since)
             add_search(topic, "arxiv", len(arxiv_papers))
             for p in arxiv_papers:
                 if p["id"] not in seen_ids and not paper_already_processed(p["id"]):
@@ -38,7 +39,7 @@ def search_node(state: PaperScoutState) -> dict:
 
         # print(f"Searching Semantic Scholar for: {topic}")
         # try:
-        #     s2_papers = search_semantic_scholar(topic, max_results=max_results)
+        #     s2_papers = search_semantic_scholar(topic, max_results=max_results, since=since)
         #     add_search(topic, "semantic_scholar", len(s2_papers))
         #     for p in s2_papers:
         #         if p["id"] not in seen_ids and not paper_already_processed(p["id"]):

@@ -25,6 +25,7 @@ def run(config_path: Path = CONFIG_PATH):
     initial_state = {
         "topics": config["topics"],
         "max_results_per_query": config["search"]["max_results_per_query"],
+        "search_since": config["search"].get("since", "2025-01"),
         "min_relevance_score": config["relevance"]["min_score"],
         "email_recipient": os.getenv('GMAIL_ADDRESS'),
         "llm_provider": config["llm"]["provider"],

@@ -1,10 +1,13 @@
 import json
+import logging
 import time
 
 from paperscout.state.graph_state import PaperScoutState, Paper
 from paperscout.state.database import update_paper_findings
 from paperscout.tools.pdf import download_and_extract
 from paperscout.llm import get_llm
+
+logger = logging.getLogger("extraction")
 
 API_DELAY_SECONDS = 5
 MAX_RETRIES = 3
@@ -31,7 +34,7 @@ def extraction_node(state: PaperScoutState) -> dict:
     papers = state["relevant_papers"]
 
     if not papers:
-        print("No relevant papers to extract.")
+        logger.info("No relevant papers to extract.")
         return {"extracted_papers": []}
 
     llm = get_llm(state["llm_provider"], state["llm_model"])
@@ -39,10 +42,10 @@ def extraction_node(state: PaperScoutState) -> dict:
     extracted: list[Paper] = []
 
     for i, paper in enumerate(papers, 1):
-        print(f"Extracting paper {i}/{len(papers)}: {paper['title'][:60]}...")
+        logger.info("Extracting paper %d/%d: %s...", i, len(papers), paper["title"][:60])
 
         if not paper.get("pdf_url"):
-            print("  No PDF URL, skipping extraction.")
+            logger.warning("No PDF URL, skipping extraction.")
             paper["key_findings"] = ["PDF not available for extraction."]
             extracted.append(paper)
             continue
@@ -52,7 +55,7 @@ def extraction_node(state: PaperScoutState) -> dict:
             # Truncate to ~8000 chars to stay within token limits
             text = text[:8000]
         except Exception as e:
-            print(f"  PDF download/extract failed: {e}")
+            logger.error("PDF download/extract failed: %s", e)
             paper["key_findings"] = ["PDF extraction failed."]
             extracted.append(paper)
             continue
@@ -70,17 +73,17 @@ def extraction_node(state: PaperScoutState) -> dict:
             except Exception as e:
                 if "429" in str(e) and attempt < MAX_RETRIES - 1:
                     wait = API_DELAY_SECONDS * (attempt + 2)
-                    print(f"  Rate limited, waiting {wait}s...")
+                    logger.warning("Rate limited, waiting %ds...", wait)
                     time.sleep(wait)
                     continue
-                print(f"  LLM extraction failed: {e}")
+                logger.error("LLM extraction failed: %s", e)
                 break
 
         time.sleep(API_DELAY_SECONDS)
         paper["key_findings"] = findings
         update_paper_findings(paper["id"], findings)
-        print(f"  Extracted {len(findings)} findings")
+        logger.info("Extracted %d findings", len(findings))
         extracted.append(paper)
 
-    print(f"\nExtracted findings from {len(extracted)} papers")
+    logger.info("Extracted findings from %d papers", len(extracted))
     return {"extracted_papers": extracted}

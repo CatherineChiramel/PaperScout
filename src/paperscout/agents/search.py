@@ -1,7 +1,11 @@
+import logging
+
 from paperscout.state.graph_state import PaperScoutState, Paper
 from paperscout.tools.arxiv import search_arxiv
 from paperscout.tools.semantic_scholar import search_semantic_scholar
 from paperscout.state.database import add_paper, add_search, paper_already_processed
+
+logger = logging.getLogger("search")
 
 
 def search_node(state: PaperScoutState) -> dict:
@@ -16,7 +20,7 @@ def search_node(state: PaperScoutState) -> dict:
     all_papers: list[Paper] = []
 
     for topic in topics:
-        print(f"Searching arXiv for: {topic}")
+        logger.info("Searching arXiv for: %s", topic)
         try:
             arxiv_papers = search_arxiv(topic, max_results=max_results, since=since)
             add_search(topic, "arxiv", len(arxiv_papers))
@@ -35,7 +39,7 @@ def search_node(state: PaperScoutState) -> dict:
                         pdf_url=p.get("pdf_url"),
                     )
         except Exception as e:
-            print(f"  arXiv search failed: {e}")
+            logger.error("arXiv search failed: %s", e)
 
         # print(f"Searching Semantic Scholar for: {topic}")
         # try:
@@ -58,5 +62,5 @@ def search_node(state: PaperScoutState) -> dict:
         # except Exception as e:
         #     print(f"  Semantic Scholar search failed: {e}")
 
-    print(f"\nTotal unique papers discovered: {len(all_papers)}")
+    logger.info("Total unique papers discovered: %d", len(all_papers))
     return {"discovered_papers": all_papers}

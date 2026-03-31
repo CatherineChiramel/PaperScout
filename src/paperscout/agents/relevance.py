@@ -1,9 +1,12 @@
 import json
+import logging
 import time
 
 from paperscout.state.graph_state import PaperScoutState, Paper
 from paperscout.state.database import update_paper_score
 from paperscout.llm import get_llm
+
+logger = logging.getLogger("relevance")
 
 # Delay between API calls to stay within free tier rate limits (15 req/min)
 API_DELAY_SECONDS = 5
@@ -38,7 +41,7 @@ def relevance_node(state: PaperScoutState) -> dict:
     topics = ", ".join(state["topics"])
 
     if not papers:
-        print("No papers to score.")
+        logger.info("No papers to score.")
         return {"relevant_papers": []}
 
     llm = get_llm(state["llm_provider"], state["llm_model"])
@@ -46,7 +49,7 @@ def relevance_node(state: PaperScoutState) -> dict:
     relevant: list[Paper] = []
 
     for i, paper in enumerate(papers, 1):
-        print(f"Scoring paper {i}/{len(papers)}: {paper['title'][:60]}...")
+        logger.info("Scoring paper %d/%d: %s...", i, len(papers), paper["title"][:60])
 
         prompt = SCORING_PROMPT.format(
             topics=topics,
@@ -70,20 +73,20 @@ def relevance_node(state: PaperScoutState) -> dict:
             except Exception as e:
                 if "429" in str(e) and attempt < MAX_RETRIES - 1:
                     wait = API_DELAY_SECONDS * (attempt + 2)
-                    print(f"  Rate limited, waiting {wait}s...")
+                    logger.warning("Rate limited, waiting %ds...", wait)
                     time.sleep(wait)
                     continue
-                print(f"  Scoring failed: {e}, defaulting to 5")
+                logger.error("Scoring failed: %s, defaulting to 5", e)
                 break
 
         time.sleep(API_DELAY_SECONDS)
 
         paper["relevance_score"] = score
         update_paper_score(paper["id"], score)
-        print(f"  Score: {score}/10 — {reason}")
+        logger.info("Score: %s/10 — %s", score, reason)
 
         if score >= min_score:
             relevant.append(paper)
 
-    print(f"\n{len(relevant)}/{len(papers)} papers passed relevance threshold ({min_score})")
+    logger.info("%d/%d papers passed relevance threshold (%s)", len(relevant), len(papers), min_score)
     return {"relevant_papers": relevant}

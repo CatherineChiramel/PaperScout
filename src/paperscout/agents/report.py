@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from jinja2 import Template
@@ -5,6 +6,8 @@ from jinja2 import Template
 from paperscout.state.graph_state import PaperScoutState
 from paperscout.state.database import add_report, mark_papers_reported
 from paperscout.tools.email import send_email
+
+logger = logging.getLogger("report")
 
 TEMPLATE_PATH = Path(__file__).parent.parent / "templates" / "report.html"
 
@@ -16,7 +19,7 @@ def report_node(state: PaperScoutState) -> dict:
     recipient = state["email_recipient"]
 
     if not papers:
-        print("No papers to report.")
+        logger.info("No papers to report.")
         return {"report_html": "", "report_sent": False}
 
     # Render HTML report
@@ -27,14 +30,14 @@ def report_node(state: PaperScoutState) -> dict:
         topics=topics,
     )
 
-    print(f"Report compiled: {len(papers)} papers")
+    logger.info("Report compiled: %d papers", len(papers))
 
     # Send email if recipient is configured
     if recipient:
         try:
             subject = f"[PaperScout] {len(papers)} papers on {topics}"
             send_email(recipient, subject, html)
-            print(f"Report sent to {recipient}")
+            logger.info("Report sent to %s", recipient)
 
             # Log the report and update paper statuses
             add_report(len(papers), recipient)
@@ -43,8 +46,8 @@ def report_node(state: PaperScoutState) -> dict:
 
             return {"report_html": html, "report_sent": True}
         except Exception as e:
-            print(f"Email failed: {e}")
+            logger.error("Email failed: %s", e)
             return {"report_html": html, "report_sent": False}
     else:
-        print("No email recipient configured, skipping send.")
+        logger.warning("No email recipient configured, skipping send.")
         return {"report_html": html, "report_sent": False}

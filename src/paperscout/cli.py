@@ -1,9 +1,16 @@
 import argparse
+import logging
 from pathlib import Path
 import os
 
 import yaml
 from dotenv import load_dotenv
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)-5s [%(name)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 from paperscout.state.database import init_db, get_all_papers
 from paperscout.graph import build_graph
@@ -19,6 +26,13 @@ def load_config(config_path: Path = CONFIG_PATH) -> dict:
 def run(config_path: Path = CONFIG_PATH):
     """Run the full PaperScout pipeline once."""
     load_dotenv()
+
+    # Start Phoenix tracing — dashboard at http://localhost:6006
+    import phoenix as px
+    from openinference.instrumentation.langchain import LangChainInstrumentor
+    px.launch_app()
+    LangChainInstrumentor().instrument()
+
     config = load_config(config_path)
     init_db()
 
@@ -39,7 +53,18 @@ def run(config_path: Path = CONFIG_PATH):
 
     print("=== PaperScout Starting ===\n")
     graph = build_graph()
-    result = graph.invoke(initial_state)
+    result = graph.invoke(
+        initial_state,
+        config={
+            "run_name": "PaperScout Pipeline",
+            "metadata": {
+                "topics": ", ".join(config["topics"]),
+                "llm_provider": config["llm"]["provider"],
+                "llm_model": config["llm"]["model"],
+                "search_since": config["search"].get("since", "2025-01"),
+            },
+        },
+    )
 
     print("\n=== PaperScout Complete ===")
     print(f"Papers discovered: {len(result['discovered_papers'])}")

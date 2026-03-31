@@ -29,9 +29,11 @@ def run(config_path: Path = CONFIG_PATH):
 
     # Start Phoenix tracing — dashboard at http://localhost:6006
     import phoenix as px
+    from phoenix.otel import register
     from openinference.instrumentation.langchain import LangChainInstrumentor
     px.launch_app()
-    LangChainInstrumentor().instrument()
+    tracer_provider = register()
+    LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
 
     config = load_config(config_path)
     init_db()

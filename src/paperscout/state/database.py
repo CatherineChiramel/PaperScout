@@ -48,8 +48,18 @@ def init_db(db_path: Path = DB_PATH) -> None:
             sent_at         TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS eval_results (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id          TEXT NOT NULL,
+            eval_name       TEXT NOT NULL,
+            passed          INTEGER NOT NULL,
+            details         TEXT,
+            evaluated_at    TEXT NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS idx_papers_status ON papers(status);
         CREATE INDEX IF NOT EXISTS idx_papers_score ON papers(relevance_score);
+        CREATE INDEX IF NOT EXISTS idx_eval_run ON eval_results(run_id);
     """)
     conn.close()
 
@@ -174,6 +184,24 @@ def add_report(paper_count: int, sent_to: str, db_path: Path = DB_PATH) -> None:
         conn.execute(
             "INSERT INTO reports (paper_count, sent_to, sent_at) VALUES (?, ?, ?)",
             (paper_count, sent_to, _now()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def add_eval_result(
+    run_id: str,
+    eval_name: str,
+    passed: bool,
+    details: str = "",
+    db_path: Path = DB_PATH,
+) -> None:
+    conn = get_connection(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO eval_results (run_id, eval_name, passed, details, evaluated_at) VALUES (?, ?, ?, ?, ?)",
+            (run_id, eval_name, int(passed), details, _now()),
         )
         conn.commit()
     finally:

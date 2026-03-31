@@ -14,6 +14,7 @@ logging.basicConfig(
 
 from paperscout.state.database import init_db, get_all_papers
 from paperscout.graph import build_graph
+from paperscout.evals import run_evals
 
 CONFIG_PATH = Path(__file__).parent.parent.parent / "config.yaml"
 
@@ -79,6 +80,11 @@ def run(config_path: Path = CONFIG_PATH):
         report_path = Path("report.html")
         report_path.write_text(result["report_html"])
         print(f"Report saved to:   {report_path}")
+
+    # Run deterministic evals
+    print("\n=== Running Evals ===")
+    eval_summary = run_evals(result)
+    print(f"Evals: {eval_summary['passed']} passed, {eval_summary['failed']} failed")
 
 
 def status():
